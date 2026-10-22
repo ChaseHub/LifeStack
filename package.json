@@ -1,0 +1,38 @@
+﻿{
+  "name": "lifestack",
+  "version": "1.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "deploy": "ng build && firebase deploy --only hosting",
+    "deploy:all": "ng build && npm --prefix functions run build && firebase deploy",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "emulate": "firebase emulators:start"
+  },
+  "private": true,
+  "packageManager": "npm@11.2.0",
+  "dependencies": {
+    "@angular/common": "^22.2.0",
+    "@angular/compiler": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/forms": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
+    "@angular/router": "^22.2.0",
+    "firebase": "^13.1.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.4",
+    "@angular/cli": "^22.2.4",
+    "@angular/compiler-cli": "^22.2.0",
+    "@types/node": "^26.6.5",
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0",
+    "jsdom": "^30.0.0",
+    "typescript": "~6.0.2",
+    "vitest": "^5.0.0"
+  }
+}
