@@ -1,30 +1,11 @@
-﻿import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FirebaseService } from './core/firebase/firebase.service';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
-  styleUrl: './app.scss',
+  imports: [RouterOutlet],
   templateUrl: './app.html',
+  styleUrl: './app.scss'
 })
-export class App {
-  readonly firebase = inject(FirebaseService);
-
-  async handleSignIn(): Promise<void> {
-    try {
-      await this.firebase.signInWithGoogle();
-    } catch (err: unknown) {
-      console.error('Sign-in failed:', err);
-    }
-  }
-
-  async handleSignOut(): Promise<void> {
-    try {
-      await this.firebase.logout();
-    } catch (err: unknown) {
-      console.error('Sign-out failed:', err);
-    }
-  }
-}
+export class App {}

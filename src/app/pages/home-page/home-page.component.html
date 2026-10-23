@@ -1,0 +1,70 @@
+<div class="home-layout">
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <span class="brand-icon">◈</span>
+        <span class="brand-name">Life<span class="gradient-text">Stack</span></span>
+      </div>
+
+      <div class="user-controls">
+        @if (auth.currentUser(); as user) {
+          <div class="user-badge">
+            @if (user.photoURL) {
+              <img [src]="user.photoURL" [alt]="user.displayName || 'User'" class="avatar" />
+            } @else {
+              <div class="avatar-placeholder">{{ (user.displayName || user.email || 'U')[0].toUpperCase() }}</div>
+            }
+            <div class="user-meta">
+              <span class="user-name">{{ user.displayName || 'Member' }}</span>
+              <span class="user-email">{{ user.email }}</span>
+            </div>
+          </div>
+        }
+
+        <button 
+          type="button" 
+          class="btn-logout" 
+          (click)="handleLogout()" 
+          [disabled]="auth.isLoading()">
+          @if (auth.isLoading()) {
+            <span>Exiting...</span>
+          } @else {
+            <span>Sign Out</span>
+          }
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Scaffolding -->
+  <main class="main-content">
+    @if (auth.currentUser(); as user) {
+      <div class="dashboard-card">
+        <div class="card-header">
+          <h2>Welcome, {{ user.displayName || 'Member' }}</h2>
+          <p>Authentication initialized successfully. Ready for core features.</p>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">USER ID</span>
+            <span class="info-value mono">{{ user.uid }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">EMAIL ADDRESS</span>
+            <span class="info-value">{{ user.email || 'Not provided' }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">AUTH STATUS</span>
+            <span class="info-value status-badge">
+              <span class="status-dot"></span> Authenticated Session
+            </span>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+</div>
