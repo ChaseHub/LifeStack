@@ -1,0 +1,115 @@
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 400px;
+  width: calc(100% - 3rem);
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  background: rgba(18, 24, 38, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
+
+  &.toast-success {
+    border-color: rgba(16, 185, 129, 0.4);
+    .toast-icon {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+  }
+
+  &.toast-error {
+    border-color: rgba(239, 68, 68, 0.4);
+    .toast-icon {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+  }
+
+  &.toast-warning {
+    border-color: rgba(245, 158, 11, 0.4);
+    .toast-icon {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+  }
+
+  &.toast-info {
+    border-color: rgba(99, 102, 241, 0.4);
+    .toast-icon {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+    }
+  }
+}
+
+.toast-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.toast-body {
+  flex: 1;
+
+  .toast-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    color: var(--text-main);
+  }
+
+  .toast-message {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    word-break: break-word;
+  }
+}
+
+.toast-close {
+  background: transparent;
+  color: var(--text-subtle);
+  border: none;
+  font-size: 0.875rem;
+  padding: 0.2rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--text-main);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

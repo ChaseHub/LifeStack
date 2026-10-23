@@ -1,0 +1,43 @@
+<header class="navbar">
+  <div class="navbar-container">
+    <!-- Brand -->
+    <a routerLink="/home" class="brand" aria-label="LifeStack Home">
+      <span class="brand-icon">◈</span>
+      <span class="brand-name">Life<span class="gradient-text">Stack</span></span>
+    </a>
+
+    <!-- Navigation Links -->
+    <nav class="nav-links">
+      <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
+        Overview
+      </a>
+      <!-- Ready for future feature routes -->
+      <span class="nav-link disabled" title="Coming soon">Finances</span>
+      <span class="nav-link disabled" title="Coming soon">Habits</span>
+      <span class="nav-link disabled" title="Coming soon">Milestones</span>
+    </nav>
+
+    <!-- User Profile & Action -->
+    <div class="nav-actions">
+      @if (currentUser(); as user) {
+        <div class="user-chip">
+          @if (user.photoURL) {
+            <img [src]="user.photoURL" [alt]="user.displayName || 'User'" class="avatar" />
+          } @else {
+            <div class="avatar-placeholder">{{ (user.displayName || user.email || 'U')[0].toUpperCase() }}</div>
+          }
+          <span class="user-name">{{ user.displayName || user.email?.split('@')?.[0] || 'User' }}</span>
+        </div>
+      }
+
+      <button 
+        type="button" 
+        class="btn-signout" 
+        (click)="handleLogout()" 
+        [disabled]="auth.isLoading()"
+        title="Sign Out">
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </div>
+</header>

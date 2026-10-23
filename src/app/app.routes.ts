@@ -4,11 +4,6 @@ import { publicGuard } from './core/auth/public.guard';
 
 export const routes: Routes = [
   {
-    path: '',
-    pathMatch: 'full',
-    redirectTo: 'home'
-  },
-  {
     path: 'login',
     canActivate: [publicGuard],
     loadComponent: () =>
@@ -17,12 +12,24 @@ export const routes: Routes = [
       )
   },
   {
-    path: 'home',
+    path: '',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/home-page/home-page.component').then(
-        (m) => m.HomePageComponent
-      )
+      import('./pages/shell/shell').then((m) => m.Shell),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'home'
+      },
+      {
+        path: 'home',
+        loadComponent: () =>
+          import('./pages/home-page/home-page.component').then(
+            (m) => m.HomePageComponent
+          )
+      }
+    ]
   },
   {
     path: '**',

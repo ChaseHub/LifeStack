@@ -1,0 +1,39 @@
+@if (notifications().length > 0) {
+  <aside class="toast-container" aria-live="polite" aria-label="Notifications">
+    @for (notif of notifications(); track notif.id) {
+      <div class="toast-item" [class]="'toast-' + notif.type" role="alert">
+        <div class="toast-icon">
+          @switch (notif.type) {
+            @case ('success') {
+              <span class="icon-glyph">✓</span>
+            }
+            @case ('error') {
+              <span class="icon-glyph">✕</span>
+            }
+            @case ('warning') {
+              <span class="icon-glyph">⚠</span>
+            }
+            @default {
+              <span class="icon-glyph">ℹ</span>
+            }
+          }
+        </div>
+
+        <div class="toast-body">
+          @if (notif.title) {
+            <h4 class="toast-title">{{ notif.title }}</h4>
+          }
+          <p class="toast-message">{{ notif.message }}</p>
+        </div>
+
+        <button 
+          type="button" 
+          class="toast-close" 
+          (click)="notificationService.dismiss(notif.id)"
+          aria-label="Close notification">
+          ✕
+        </button>
+      </div>
+    }
+  </aside>
+}

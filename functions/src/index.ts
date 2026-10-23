@@ -2,6 +2,7 @@ import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { auth } from "firebase-functions/v1";
+import { successResponse, errorResponse } from "./utils/response";
 
 admin.initializeApp();
 
@@ -10,12 +11,13 @@ admin.initializeApp();
  */
 export const apiHealth = onRequest((request, response) => {
   logger.info("apiHealth called", { structuredData: true });
-  response.json({
-    status: "healthy",
-    service: "LifeStack Serverless Cloud Functions",
-    runtime: "Node.js 22",
-    timestamp: new Date().toISOString()
-  });
+  response.json(
+    successResponse({
+      status: "healthy",
+      service: "LifeStack Serverless Cloud Functions",
+      runtime: "Node.js 22"
+    })
+  );
 });
 
 /**
@@ -61,8 +63,8 @@ export const onUserDeleted = auth.user().onDelete(async (user) => {
 });
 
 /**
- * Sample Callable Function: Demonstrates automatic token verification in Firebase Functions v2.
- * The caller must be authenticated; otherwise request.auth is null.
+ * Sample Callable Function: Demonstrates automatic token verification in Firebase Functions v2
+ * and returns standard ApiResponse.
  */
 export const getMyProfile = onCall(async (request) => {
   if (!request.auth) {
@@ -73,8 +75,8 @@ export const getMyProfile = onCall(async (request) => {
   const userDoc = await db.collection("users").doc(request.auth.uid).get();
 
   if (!userDoc.exists) {
-    throw new HttpsError("not-found", "User document was not found.");
+    return errorResponse("NOT_FOUND", "User document was not found.");
   }
 
-  return userDoc.data();
+  return successResponse(userDoc.data());
 });

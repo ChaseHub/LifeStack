@@ -1,21 +1,33 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { NotificationService } from '../../shared/services/notification.service';
+import { FunctionsService } from '../../shared/services/functions.service';
 
 @Component({
   selector: 'app-home-page',
-  standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent {
   readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
+  private readonly notifications = inject(NotificationService);
+  private readonly functionsService = inject(FunctionsService);
 
-  async handleLogout(): Promise<void> {
-    await this.auth.logout();
-    await this.router.navigate(['/login']);
+  readonly currentUser = this.auth.currentUser;
+
+  triggerSuccessNotification(): void {
+    this.notifications.success('System is operating nominally.', 'System Health');
+  }
+
+  async testCallableFunction(): Promise<void> {
+    try {
+      await this.functionsService.call('getMyProfile', {}, {
+        successMessage: 'Profile data retrieved from Cloud Function!',
+        notificationTitle: 'Cloud Functions'
+      });
+    } catch {
+      // FunctionsService already routes error toasts automatically
+    }
   }
 }
