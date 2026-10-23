@@ -1,10 +1,12 @@
 import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { auth } from "firebase-functions/v1";
 import { successResponse, errorResponse } from "./utils/response";
 
-admin.initializeApp();
+initializeApp();
+const db = getFirestore();
 
 /**
  * Health check endpoint for system monitoring
@@ -26,7 +28,6 @@ export const apiHealth = onRequest((request, response) => {
  */
 export const onUserCreated = auth.user().onCreate(async (user) => {
   logger.info("Initializing profile for new user", { uid: user.uid });
-  const db = admin.firestore();
 
   try {
     await db.collection("users").doc(user.uid).set(
@@ -35,8 +36,8 @@ export const onUserCreated = auth.user().onCreate(async (user) => {
         email: user.email || null,
         displayName: user.displayName || null,
         photoURL: user.photoURL || null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
       },
       { merge: true }
     );
@@ -52,7 +53,6 @@ export const onUserCreated = auth.user().onCreate(async (user) => {
  */
 export const onUserDeleted = auth.user().onDelete(async (user) => {
   logger.info("Cleaning up profile for deleted user", { uid: user.uid });
-  const db = admin.firestore();
 
   try {
     await db.collection("users").doc(user.uid).delete();
@@ -71,7 +71,6 @@ export const getMyProfile = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
   }
 
-  const db = admin.firestore();
   const userDoc = await db.collection("users").doc(request.auth.uid).get();
 
   if (!userDoc.exists) {
