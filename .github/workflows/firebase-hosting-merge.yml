@@ -24,6 +24,15 @@ jobs:
             cp src/environments/environment.example.ts src/environments/environment.ts
           fi
       - run: npm ci && npm run build
+      - name: Deploy Cloud Functions and Firestore Rules
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LIFESTACK_371AB }}
+        run: |
+          npm --prefix functions ci
+          echo "$GCP_SA_KEY" > "$RUNNER_TEMP/gcp_key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/gcp_key.json"
+          npx -y firebase-tools@latest deploy --only functions,firestore:rules --project lifestack-371ab
+          rm -f "$RUNNER_TEMP/gcp_key.json"
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
