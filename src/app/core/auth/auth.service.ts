@@ -6,6 +6,7 @@ import {
   signOut,
   User
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { FirebaseService } from '../firebase/firebase.service';
 import { AuthUser } from './user.model';
 
@@ -26,12 +27,14 @@ export class AuthService {
     this.authReadyPromise = new Promise<void>((resolve) => {
       onAuthStateChanged(this.firebase.auth, (user: User | null) => {
         if (user) {
-          this.currentUser.set({
+          const authUser: AuthUser = {
             uid: user.uid,
             email: user.email,
             displayName: user.displayName,
             photoURL: user.photoURL
-          });
+          };
+          this.currentUser.set(authUser);
+          void this.syncUserProfile(authUser);
         } else {
           this.currentUser.set(null);
         }
@@ -39,6 +42,25 @@ export class AuthService {
         resolve();
       });
     });
+  }
+
+  private async syncUserProfile(user: AuthUser): Promise<void> {
+    try {
+      const userRef = doc(this.firebase.db, 'users', user.uid);
+      await setDoc(
+        userRef,
+        {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.warn('Failed to sync user profile to Firestore:', err);
+    }
   }
 
   /**

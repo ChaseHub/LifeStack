@@ -3,7 +3,7 @@ import * as logger from "firebase-functions/logger";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { auth } from "firebase-functions/v1";
-import { successResponse, errorResponse } from "./utils/response";
+import { successResponse } from "./utils/response";
 
 initializeApp();
 const db = getFirestore();
@@ -71,10 +71,21 @@ export const getMyProfile = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
   }
 
-  const userDoc = await db.collection("users").doc(request.auth.uid).get();
+  const userRef = db.collection("users").doc(request.auth.uid);
+  const userDoc = await userRef.get();
 
   if (!userDoc.exists) {
-    return errorResponse("NOT_FOUND", "User document was not found.");
+    const newProfile = {
+      uid: request.auth.uid,
+      email: request.auth.token.email || null,
+      displayName: request.auth.token.name || null,
+      photoURL: request.auth.token.picture || null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    };
+    await userRef.set(newProfile, { merge: true });
+    const createdDoc = await userRef.get();
+    return successResponse(createdDoc.data() ?? newProfile);
   }
 
   return successResponse(userDoc.data());

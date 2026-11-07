@@ -42,9 +42,6 @@ export class FunctionsService {
       if (this.isApiResponse<TResponse>(rawData)) {
         if (!rawData.success) {
           const errMsg = rawData.error?.message || `Function ${functionName} failed`;
-          if (options.showErrorNotification !== false) {
-            this.notifications.error(errMsg, options.notificationTitle || 'Action Failed');
-          }
           throw new Error(errMsg);
         }
 
