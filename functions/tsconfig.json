@@ -1,13 +1,15 @@
-﻿{
+{
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2023",
     "outDir": "lib",
+    "rootDir": "src",
     "sourceMap": true,
     "strict": true,
-    "target": "es2022",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "types": ["node"]

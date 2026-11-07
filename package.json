@@ -1,18 +1,23 @@
-﻿{
+{
   "name": "lifestack",
   "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:functions": "npm --prefix functions run build",
     "deploy": "ng build && firebase deploy --only hosting",
-    "deploy:all": "ng build && npm --prefix functions run build && firebase deploy",
+    "deploy:all": "ng build && firebase deploy",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "emulate": "firebase emulators:start"
+    "test:ci": "ng test --watch=false",
+    "emulate": "npm --prefix functions run build && firebase emulators:start"
   },
-  "private": true,
-  "packageManager": "npm@11.2.0",
   "dependencies": {
     "@angular/common": "^22.2.0",
     "@angular/compiler": "^22.2.0",
@@ -28,11 +33,22 @@
     "@angular/build": "^22.2.4",
     "@angular/cli": "^22.2.4",
     "@angular/compiler-cli": "^22.2.0",
-    "@types/node": "^26.6.5",
-    "firebase-admin": "^14.5.0",
-    "firebase-functions": "^7.4.0",
+    "@types/node": "^24.0.0",
     "jsdom": "^30.0.0",
     "typescript": "~6.0.2",
     "vitest": "^5.0.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6",
+    "vite": "^8.3.3"
+  },
+  "allowScripts": {
+    "@firebase/util": true,
+    "@parcel/watcher": true,
+    "esbuild": true,
+    "fsevents": true,
+    "lmdb": true,
+    "msgpackr-extract": true,
+    "protobufjs": false
   }
 }

@@ -1,92 +1,121 @@
-import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
-import * as logger from "firebase-functions/logger";
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { auth } from "firebase-functions/v1";
-import { successResponse } from "./utils/response";
+import { getFirestore } from "firebase-admin/firestore";
+import { onCall, onRequest, HttpsError } from "firebase-functions/https";
+import { onUserCreated, onUserDeleted } from "firebase-functions/identity";
+import * as logger from "firebase-functions/logger";
+import { setGlobalOptions } from "firebase-functions/options";
+import { ensureUserProfile, purgeUserData } from "./services/user-profile.js";
+import { successResponse } from "./utils/response.js";
 
 initializeApp();
 const db = getFirestore();
 
+setGlobalOptions({
+  region: "us-central1",
+  maxInstances: 10
+});
+
 /**
- * Health check endpoint for system monitoring
+ * Health check endpoint for system monitoring (`/api/health`).
  */
-export const apiHealth = onRequest((request, response) => {
+export const apiHealth = onRequest((_request, response) => {
   logger.info("apiHealth called", { structuredData: true });
   response.json(
     successResponse({
       status: "healthy",
-      service: "LifeStack Serverless Cloud Functions",
-      runtime: "Node.js 22"
+      service: "LifeStack Serverless Cloud Functions (2nd Gen)",
+      runtime: `Node.js ${process.versions.node}`
     })
   );
 });
 
 /**
- * Background Trigger: Automatically initializes a user profile document
- * in Firestore (`users/{uid}`) upon first signup through Firebase Auth.
+ * 2nd Gen Auth Trigger (Eventarc): Idempotently initializes a user profile
+ * document in Firestore (`users/{uid}`) when a Firebase Auth account is created.
  */
-export const onUserCreated = auth.user().onCreate(async (user) => {
-  logger.info("Initializing profile for new user", { uid: user.uid });
+export const authUserCreated = onUserCreated(async (event) => {
+  const user = event.data;
+  if (!user?.uid) {
+    logger.warn("Received user.created event without a valid user payload", {
+      eventId: event.id
+    });
+    return;
+  }
+
+  logger.info("Initializing profile for new user", {
+    uid: user.uid,
+    eventId: event.id
+  });
 
   try {
-    await db.collection("users").doc(user.uid).set(
-      {
-        uid: user.uid,
-        email: user.email || null,
-        displayName: user.displayName || null,
-        photoURL: user.photoURL || null,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp()
-      },
-      { merge: true }
-    );
-    logger.info("Successfully created user profile", { uid: user.uid });
+    await ensureUserProfile(db, {
+      uid: user.uid,
+      email: user.email ?? null,
+      displayName: user.displayName ?? null,
+      photoURL: user.photoURL ?? null
+    });
+    logger.info("Successfully initialized user profile", { uid: user.uid });
   } catch (error) {
-    logger.error("Failed to initialize user document", { uid: user.uid, error });
+    logger.error("Failed to initialize user document", {
+      uid: user.uid,
+      eventId: event.id,
+      error
+    });
+    throw error;
   }
 });
 
 /**
- * Background Trigger: Cleans up user profile document in Firestore
- * when a user is deleted from Firebase Auth.
+ * 2nd Gen Auth Trigger (Eventarc): Recursively purges a user's profile document
+ * and all nested subcollections (`users/{uid}/**`) upon Firebase Auth account deletion.
  */
-export const onUserDeleted = auth.user().onDelete(async (user) => {
-  logger.info("Cleaning up profile for deleted user", { uid: user.uid });
+export const authUserDeleted = onUserDeleted(async (event) => {
+  const user = event.data;
+  if (!user?.uid) {
+    logger.warn("Received user.deleted event without a valid user payload", {
+      eventId: event.id
+    });
+    return;
+  }
+
+  logger.info("Purging Firestore data for deleted user", {
+    uid: user.uid,
+    eventId: event.id
+  });
 
   try {
-    await db.collection("users").doc(user.uid).delete();
-    logger.info("Successfully removed user profile", { uid: user.uid });
+    await purgeUserData(db, user.uid);
+    logger.info("Successfully purged user profile and subcollections", {
+      uid: user.uid
+    });
   } catch (error) {
-    logger.error("Failed to delete user document", { uid: user.uid, error });
+    logger.error("Failed to purge deleted user data", {
+      uid: user.uid,
+      eventId: event.id,
+      error
+    });
+    throw error;
   }
 });
 
 /**
- * Sample Callable Function: Demonstrates automatic token verification in Firebase Functions v2
- * and returns standard ApiResponse.
+ * 2nd Gen Callable Function: Verifies caller authentication and returns
+ * the caller's Firestore profile (initializing it atomically if not yet created).
  */
 export const getMyProfile = onCall(async (request) => {
   if (!request.auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated to call this function.");
+    throw new HttpsError(
+      "unauthenticated",
+      "User must be authenticated to call this function."
+    );
   }
 
-  const userRef = db.collection("users").doc(request.auth.uid);
-  const userDoc = await userRef.get();
+  const profile = await ensureUserProfile(db, {
+    uid: request.auth.uid,
+    email: request.auth.token.email ?? null,
+    displayName: request.auth.token.name ?? null,
+    photoURL: request.auth.token.picture ?? null
+  });
 
-  if (!userDoc.exists) {
-    const newProfile = {
-      uid: request.auth.uid,
-      email: request.auth.token.email || null,
-      displayName: request.auth.token.name || null,
-      photoURL: request.auth.token.picture || null,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    };
-    await userRef.set(newProfile, { merge: true });
-    const createdDoc = await userRef.get();
-    return successResponse(createdDoc.data() ?? newProfile);
-  }
-
-  return successResponse(userDoc.data());
+  return successResponse(profile);
 });

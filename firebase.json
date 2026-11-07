@@ -20,7 +20,10 @@
     "rewrites": [
       {
         "source": "/api/health",
-        "function": "apiHealth"
+        "function": {
+          "functionId": "apiHealth",
+          "region": "us-central1"
+        }
       },
       {
         "source": "**",
@@ -49,6 +52,9 @@
     "indexes": "firestore.indexes.json"
   },
   "emulators": {
+    "auth": {
+      "port": 9099
+    },
     "functions": {
       "port": 5001
     },
