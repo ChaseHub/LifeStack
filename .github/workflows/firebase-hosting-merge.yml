@@ -53,6 +53,9 @@ jobs:
       - name: Run frontend unit tests
         run: npm run test:ci
 
+      - name: Run Cloud Functions unit tests
+        run: npm run test:functions
+
       - name: Build Angular production bundle
         run: npm run build
 

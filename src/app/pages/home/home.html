@@ -7,7 +7,10 @@
           <span>Core Architecture Ready</span>
         </div>
         <h2>Welcome back, {{ user.displayName || 'Member' }}</h2>
-        <p>LifeStack core architecture initialized: Shell layout, Firestore Base Service, Cloud Functions responses, and Global Notifications.</p>
+        <p>
+          LifeStack core architecture initialized: Zoneless Shell layout, reactive
+          FirestoreService, 2nd Gen Cloud Functions envelopes, and Global Notifications.
+        </p>
       </div>
 
       <div class="info-grid">
@@ -24,7 +27,7 @@
         <div class="info-item">
           <span class="info-label">AUTH SESSION</span>
           <span class="info-value status-badge">
-            <span class="status-dot"></span> Authenticated & Encrypted
+            <span class="status-dot"></span> Authenticated &amp; Encrypted
           </span>
         </div>
       </div>
@@ -35,11 +38,18 @@
           <button type="button" class="btn-action" (click)="triggerSuccessNotification()">
             <span>🔔 Test Toast Notification</span>
           </button>
-          <button type="button" class="btn-action" (click)="testCallableFunction()">
-            <span>⚡ Test Functions Response System</span>
+          <button
+            type="button"
+            class="btn-action"
+            [disabled]="isTestingFunction()"
+            (click)="testCallableFunction()">
+            <span>
+              {{ isTestingFunction() ? '⏳ Calling Cloud Function...' : '⚡ Test Functions Response System' }}
+            </span>
           </button>
         </div>
       </div>
     </div>
   }
 </section>
+

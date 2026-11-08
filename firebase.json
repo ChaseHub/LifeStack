@@ -13,6 +13,40 @@
           {
             "key": "Cross-Origin-Opener-Policy",
             "value": "same-origin-allow-popups"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "DENY"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(), microphone=(), geolocation=()"
+          }
+        ]
+      },
+      {
+        "source": "/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css|woff2)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
           }
         ]
       }
@@ -37,6 +71,9 @@
       "codebase": "default",
       "ignore": [
         "node_modules",
+        "lib-test",
+        "src/__tests__",
+        "*.test.ts",
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",

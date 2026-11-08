@@ -9,11 +9,11 @@
 
 LifeStack follows the **Modern Firebase Serverless Architecture** (Zero Docker, zero backend servers to manage):
 
-* **Frontend (`src/`)**: Modern **Angular 22** Single Page App (Signals, Standalone components, Zoneless change detection) targeting **Node.js 24 LTS**.
-* **Database & Auth**: Direct client connection to **Cloud Firestore** and **Firebase Authentication** with real-time reactive signals.
-* **Security (`firestore.rules`)**: Granular security rules enforcing user-partitioned data access (`users/{uid}/**`).
-* **Serverless Backend (`functions/`)**: **2nd Gen** Google Cloud Run Functions (**Node.js 24** + TypeScript 6 + Eventarc) for Auth lifecycle triggers, callable APIs, scheduled tasks, and secret-backed integrations.
-* **Hosting**: **Firebase Hosting** global edge CDN with automatic SSL and Cloud Run function rewrites.
+* **Frontend (`src/`)**: Modern **Angular 22** Single Page App (Signals, Standalone `OnPush` components, Zoneless change detection) structured into `core/`, `shared/`, `features/`, and `pages/` layers targeting **Node.js 24 LTS** & **TypeScript 6**.
+* **Database & Auth**: Direct client connection to **Cloud Firestore** and **Firebase Authentication** with component-scoped reactive signals (`FirestoreService`).
+* **Security (`firestore.rules`)**: Strict schema-validated security rules enforcing owner-only PII isolation, immutable metadata, and default-deny access.
+* **Serverless Backend (`functions/`)**: Modular **2nd Gen** Google Cloud Run Functions (**Node.js 24** + TypeScript 6 + Eventarc) for Auth lifecycle triggers (`authUserCreated`, `authUserDeleted`), callable APIs (`getMyProfile`), and HTTP endpoints (`apiHealth`).
+* **Hosting (`firebase.json`)**: **Firebase Hosting** global edge CDN with security headers, immutable asset caching, and Cloud Run function rewrites.
 
 ---
 
@@ -35,6 +35,12 @@ npm --prefix functions install
 npm start
 ```
 Access the app at `http://localhost:4200`.
+
+#### Run Automated Tests (Frontend Vitest + Backend Node Test Runner):
+```bash
+npm run test:ci
+npm run test:functions
+```
 
 #### Run the Full Firebase Emulator Suite (Auth, Firestore, Functions, Hosting):
 ```bash

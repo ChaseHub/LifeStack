@@ -1,28 +1,31 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
-  selector: 'app-login-page',
+  selector: 'app-login',
   imports: [],
-  templateUrl: './login-page.component.html',
-  styleUrl: './login-page.component.scss'
+  templateUrl: './login.html',
+  styleUrl: './login.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LoginPageComponent {
+export class Login {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  errorMessage = '';
+
+  readonly errorMessage = signal<string>('');
 
   async handleGoogleLogin(): Promise<void> {
-    this.errorMessage = '';
+    this.errorMessage.set('');
     try {
       await this.auth.loginWithGoogle();
       await this.router.navigate(['/home']);
     } catch (err: unknown) {
       const authError = err as { code?: string; message?: string };
       if (authError.code !== 'auth/popup-closed-by-user') {
-        this.errorMessage = authError.message || 'Failed to sign in. Please try again.';
+        this.errorMessage.set(authError.message || 'Failed to sign in. Please try again.');
       }
     }
   }
 }
+

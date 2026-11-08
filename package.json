@@ -16,6 +16,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false",
+    "test:functions": "npm --prefix functions test",
     "emulate": "npm --prefix functions run build && firebase emulators:start"
   },
   "dependencies": {

@@ -132,9 +132,15 @@
   font-weight: 600;
   transition: all 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(99, 102, 241, 0.15);
     border-color: var(--border-accent);
     transform: translateY(-1px);
   }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
+

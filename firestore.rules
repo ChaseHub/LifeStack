@@ -1,14 +1,143 @@
 rules_version = '2';
 
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file enforces the following data structures:
+//
+// Collection: users
+// Document ID: {userId} (must match Firebase Auth UID)
+// Fields:
+//   - uid: string (required, immutable, 1..128 chars, must equal {userId}) - Owner Firebase Auth UID
+//   - email: string | null (required key, nullable, valid email <= 320 chars) - Primary email address (PII)
+//   - displayName: string | null (required key, nullable, 1..200 chars) - User display name
+//   - photoURL: string | null (required key, nullable, http/https URL <= 2048 chars) - Avatar URL
+//   - createdAt: timestamp (required, immutable, must equal request.time on create) - Creation timestamp
+//   - updatedAt: timestamp (required, must equal request.time on create/update) - Last update timestamp
+//
+// Note: Deletion of `/users/{userId}` and recursive cleanup of user data is handled
+// exclusively server-side by the 2nd Gen `authUserDeleted` Cloud Function (Admin SDK).
+// Future feature subcollections (`finances`, `habits`, `milestones`) must define
+// explicit match blocks and domain validators rather than wildcard rules.
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // User data isolation: authenticated users can only read and write their own profile and sub-collections
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      match /{allChildren=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isValidUrl(url) {
+      return url is string &&
+        url.size() >= 8 &&
+        url.size() <= 2048 &&
+        (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() >= 3 &&
+        email.size() <= 320 &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isNullableEmail(value) {
+      return value == null || isValidEmail(value);
+    }
+
+    function isNullableString(value, minLen, maxLen) {
+      return value == null ||
+        (value is string && value.size() >= minLen && value.size() <= maxLen);
+    }
+
+    function isNullableUrl(value) {
+      return value == null || isValidUrl(value);
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in BOTH create and update)
+    // ===============================================================
+
+    function isValidUserProfile(data, userId) {
+      let fields = ['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'];
+      return hasRequiredFields(fields) &&
+        hasOnlyAllowedFields(fields) &&
+        data.uid is string &&
+        data.uid == userId &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        isNullableEmail(data.email) &&
+        isNullableString(data.displayName, 1, 200) &&
+        isNullableUrl(data.photoURL) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Strictly owner-only read because user profile contains PII (email)
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+        uidUnchanged() &&
+        isValidUserProfile(request.resource.data, userId) &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time;
+
+      allow update: if isOwner(userId) &&
+        isDocOwner() &&
+        uidNotModified() &&
+        areImmutableFieldsUnchanged(['uid', 'createdAt']) &&
+        isValidUserProfile(request.resource.data, userId) &&
+        request.resource.data.updatedAt == request.time;
+
+      // Account cleanup is performed exclusively via Admin SDK (`authUserDeleted` trigger)
+      allow delete: if false;
+    }
+
+    // Explicit default deny for all unmatched paths
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

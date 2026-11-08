@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { NotificationService } from './core/services/notification.service';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -10,9 +11,14 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('should create the app shell', () => {
+  it('creates the root app and renders global toast notifications', async () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    const notificationService = TestBed.inject(NotificationService);
+
+    notificationService.info('Welcome to LifeStack', 'Ready', 0);
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('Welcome to LifeStack');
   });
 });

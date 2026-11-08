@@ -1,16 +1,16 @@
 import { Injectable, inject } from '@angular/core';
 import { httpsCallable, HttpsCallableResult } from 'firebase/functions';
-import { FirebaseService } from '../../core/firebase/firebase.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { NotificationService } from './notification.service';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface FunctionCallOptions {
-  /** If true, automatically displays an error toast if the function fails (default: true) */
-  showErrorNotification?: boolean;
-  /** If provided, automatically displays a success toast upon resolution */
-  successMessage?: string;
-  /** Custom notification title */
-  notificationTitle?: string;
+  /** If true, automatically displays an error toast when the function fails (default: true). */
+  readonly showErrorNotification?: boolean;
+  /** If provided, automatically displays a success toast upon resolution. */
+  readonly successMessage?: string;
+  /** Custom notification title. */
+  readonly notificationTitle?: string;
 }
 
 @Injectable({
@@ -21,15 +21,15 @@ export class FunctionsService {
   private readonly notifications = inject(NotificationService);
 
   /**
-   * Calls a Firebase Callable Cloud Function with automatic typing,
-   * standard ApiResponse envelope unwrapping, and toast notification routing.
+   * Calls a 2nd Gen Firebase Callable Cloud Function with strong typing,
+   * standard `ApiResponse` envelope unwrapping, and toast notification routing.
    */
-  async call<TRequest = unknown, TResponse = unknown>(
+  async call<TRequest = void, TResponse = unknown>(
     functionName: string,
     data?: TRequest,
     options: FunctionCallOptions = { showErrorNotification: true }
   ): Promise<TResponse> {
-    const callable = httpsCallable<TRequest, ApiResponse<TResponse> | TResponse>(
+    const callable = httpsCallable<TRequest | undefined, ApiResponse<TResponse> | TResponse>(
       this.firebase.functions,
       functionName
     );
@@ -38,7 +38,6 @@ export class FunctionsService {
       const result: HttpsCallableResult<ApiResponse<TResponse> | TResponse> = await callable(data);
       const rawData = result.data;
 
-      // Check if response conforms to our standard ApiResponse structure
       if (this.isApiResponse<TResponse>(rawData)) {
         if (!rawData.success) {
           const errMsg = rawData.error?.message || `Function ${functionName} failed`;
@@ -52,7 +51,6 @@ export class FunctionsService {
         return rawData.data as TResponse;
       }
 
-      // If returning direct data (not wrapped in ApiResponse)
       if (options.successMessage) {
         this.notifications.success(options.successMessage, options.notificationTitle);
       }
@@ -80,7 +78,9 @@ export class FunctionsService {
   }
 
   private formatFirebaseError(err: { code?: string; message?: string }): string {
-    if (!err.message) return 'An unexpected network error occurred';
+    if (!err.message) {
+      return 'An unexpected network error occurred.';
+    }
     if (err.code === 'functions/unauthenticated') {
       return 'You must be signed in to perform this action.';
     }
@@ -93,3 +93,4 @@ export class FunctionsService {
     return err.message;
   }
 }
+

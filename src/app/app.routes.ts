@@ -6,16 +6,12 @@ export const routes: Routes = [
   {
     path: 'login',
     canActivate: [publicGuard],
-    loadComponent: () =>
-      import('./pages/login-page/login-page.component').then(
-        (m) => m.LoginPageComponent
-      )
+    loadComponent: () => import('./pages/login/login').then((m) => m.Login)
   },
   {
     path: '',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./pages/shell/shell').then((m) => m.Shell),
+    loadComponent: () => import('./pages/shell/shell').then((m) => m.Shell),
     children: [
       {
         path: '',
@@ -24,10 +20,7 @@ export const routes: Routes = [
       },
       {
         path: 'home',
-        loadComponent: () =>
-          import('./pages/home-page/home-page.component').then(
-            (m) => m.HomePageComponent
-          )
+        loadComponent: () => import('./pages/home/home').then((m) => m.Home)
       }
     ]
   },

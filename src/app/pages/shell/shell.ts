@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Navbar } from './components/navbar/navbar';
-import { NotificationToast } from '../../shared/components/notification-toast/notification-toast';
 
 @Component({
   selector: 'app-shell',
-  imports: [Navbar, RouterOutlet, NotificationToast],
+  imports: [Navbar, RouterOutlet],
   templateUrl: './shell.html',
-  styleUrl: './shell.scss'
+  styleUrl: './shell.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Shell {}
