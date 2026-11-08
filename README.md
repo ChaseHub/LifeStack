@@ -57,12 +57,18 @@ To ensure old Cloud Run container images in `us-central1` are automatically prun
 firebase functions:artifacts:setpolicy --location us-central1 --days 1 --project lifestack-371ab --force
 ```
 
-### Required IAM Roles for the GitHub Actions Service Account
-Ensure the service account stored in `secrets.FIREBASE_SERVICE_ACCOUNT_LIFESTACK_371AB` holds the following roles in Google Cloud IAM for `lifestack-371ab`:
-* `roles/firebasehosting.admin` — Deploy live and preview Hosting channels
+### One-Time GCP & CI/CD IAM Bootstrap
+Run the automated bootstrap script once as a Project Owner (e.g., in [Google Cloud Shell](https://shell.cloud.google.com/?project=lifestack-371ab)) to enable all required APIs, bind 2nd Gen Eventarc/PubSub service agents, and grant least-privilege roles to your GitHub Actions service account:
+```bash
+bash scripts/bootstrap-ci-iam.sh lifestack-371ab
+```
+
+The script configures the following least-privilege IAM roles on the CI service account (`secrets.FIREBASE_SERVICE_ACCOUNT_LIFESTACK_371AB`):
+* `roles/firebasehosting.admin` & `roles/firebaseauth.admin` — Deploy live/preview Hosting channels and manage preview authorized domains
 * `roles/firebaserules.admin` & `roles/datastore.indexAdmin` — Release Firestore rules & composite indexes
 * `roles/cloudfunctions.admin` & `roles/run.admin` — Deploy 2nd Gen Cloud Functions on Cloud Run
 * `roles/eventarc.admin` — Provision Eventarc triggers (`authUserCreated`, `authUserDeleted`)
 * `roles/artifactregistry.repoAdmin` — Inspect/configure Artifact Registry image cleanup policies
 * `roles/iam.serviceAccountUser` — Act as the runtime service account during function deployment
+* `roles/iam.securityReviewer` — Read project IAM bindings (`resourcemanager.projects.getIamPolicy`) during Firebase CLI preflight verification
 * `roles/serviceusage.serviceUsageConsumer` & `roles/firebaseextensions.viewer` — Validate enabled APIs & extensions manifest cleanly without warnings
