@@ -16,9 +16,46 @@ export interface UserProfileDocument {
   readonly updatedAt?: Timestamp | FieldValue;
 }
 
+export interface UserProfileDto {
+  readonly uid: string;
+  readonly email: string | null;
+  readonly displayName: string | null;
+  readonly photoURL: string | null;
+  readonly createdAt: string | null;
+  readonly updatedAt: string | null;
+}
+
 export function normalizeNullableString(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function serializeTimestamp(value: unknown): string | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof (value as { toDate: unknown }).toDate === "function"
+  ) {
+    return (value as { toDate(): Date }).toDate().toISOString();
+  }
+  return null;
+}
+
+export function toUserProfileDto(doc: UserProfileDocument): UserProfileDto {
+  return {
+    uid: doc.uid,
+    email: doc.email ?? null,
+    displayName: doc.displayName ?? null,
+    photoURL: doc.photoURL ?? null,
+    createdAt: serializeTimestamp(doc.createdAt),
+    updatedAt: serializeTimestamp(doc.updatedAt)
+  };
 }
 
 /**
@@ -53,7 +90,9 @@ export async function ensureUserProfile(
     }
 
     const existingData = existingSnap.data() ?? {};
-    const existingEmail = normalizeNullableString(existingData["email"] as string | null | undefined);
+    const existingEmail = normalizeNullableString(
+      existingData["email"] as string | null | undefined
+    );
     const existingDisplayName = normalizeNullableString(
       existingData["displayName"] as string | null | undefined
     );
@@ -109,4 +148,3 @@ export async function purgeUserData(db: Firestore, uid: string): Promise<void> {
   const userRef = db.collection("users").doc(uid);
   await db.recursiveDelete(userRef);
 }
-

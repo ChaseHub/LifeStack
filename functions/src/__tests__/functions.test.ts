@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import type { Firestore } from "firebase-admin/firestore";
+import { deleteApp, getApps, initializeApp } from "firebase-admin/app";
+import { Timestamp, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/https";
 import type { AuthData } from "firebase-functions/tasks";
 import { resolveCallerProfile } from "../callables/get-my-profile.js";
+import { getAdminApp } from "../config/firebase.js";
 import { handleApiHealth, MinimalHttpResponse } from "../http/api-health.js";
 import {
   ensureUserProfile,
   normalizeNullableString,
-  purgeUserData
+  purgeUserData,
+  toUserProfileDto
 } from "../services/user-profile.service.js";
 import { errorResponse, successResponse } from "../utils/response.js";
 
@@ -133,6 +136,27 @@ function createMockResponse(): {
   };
 }
 
+describe("Firebase Admin initialization", () => {
+  it("initializes the [DEFAULT] Admin app even when firebase-functions has already registered a named app", async () => {
+    for (const existing of getApps()) {
+      await deleteApp(existing);
+    }
+
+    const internalSdkApp = initializeApp(
+      { projectId: "lifestack-test" },
+      "__FIREBASE_FUNCTIONS_SDK__"
+    );
+    assert.equal(getApps().length, 1);
+
+    const defaultApp = getAdminApp();
+    assert.equal(defaultApp.name, "[DEFAULT]");
+    assert.equal(getAdminApp(), defaultApp);
+
+    await deleteApp(internalSdkApp);
+    await deleteApp(defaultApp);
+  });
+});
+
 describe("Cloud Functions response utilities", () => {
   it("wraps successful payloads in an ApiResponse envelope", () => {
     const res = successResponse({ status: "ok" });
@@ -191,6 +215,21 @@ describe("user-profile service & getMyProfile callable", () => {
     assert.equal(normalizeNullableString(" chase@example.com "), "chase@example.com");
   });
 
+  it("serializes Firestore Timestamp fields into clean ISO-8601 strings in toUserProfileDto", () => {
+    const ts = Timestamp.fromMillis(1700000000000);
+    const dto = toUserProfileDto({
+      uid: "user_123",
+      email: "chase@example.com",
+      displayName: "Chase",
+      photoURL: null,
+      createdAt: ts,
+      updatedAt: ts
+    });
+
+    assert.equal(dto.createdAt, "2023-11-14T22:13:20.000Z");
+    assert.equal(dto.updatedAt, "2023-11-14T22:13:20.000Z");
+  });
+
   it("creates a new user profile document on initial sign-up", async () => {
     const { db, state } = createMockFirestore();
     const profile = await ensureUserProfile(db, {
@@ -207,7 +246,7 @@ describe("user-profile service & getMyProfile callable", () => {
   });
 
   it("preserves createdAt and skips writes when profile fields are already up to date", async () => {
-    const originalCreatedAt = { seconds: 1700000000, nanoseconds: 0 };
+    const originalCreatedAt = Timestamp.fromMillis(1700000000000);
     const { db, state } = createMockFirestore({
       "users/user_123": {
         uid: "user_123",
@@ -260,8 +299,18 @@ describe("user-profile service & getMyProfile callable", () => {
     );
   });
 
-  it("returns wrapped profile when getMyProfile is called by an authenticated user", async () => {
-    const { db } = createMockFirestore();
+  it("returns wrapped profile DTO when getMyProfile is called by an authenticated user", async () => {
+    const ts = Timestamp.fromMillis(1700000000000);
+    const { db } = createMockFirestore({
+      "users/uid_abc": {
+        uid: "uid_abc",
+        email: "member@lifestack.app",
+        displayName: "Member",
+        photoURL: "https://example.com/pic.jpg",
+        createdAt: ts,
+        updatedAt: ts
+      }
+    });
     const mockAuth = {
       uid: "uid_abc",
       token: {
@@ -275,6 +324,6 @@ describe("user-profile service & getMyProfile callable", () => {
     assert.equal(response.success, true);
     assert.equal(response.data?.uid, "uid_abc");
     assert.equal(response.data?.email, "member@lifestack.app");
+    assert.equal(response.data?.createdAt, "2023-11-14T22:13:20.000Z");
   });
 });
-

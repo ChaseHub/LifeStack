@@ -90,6 +90,15 @@ export class FunctionsService {
     if (err.code === 'functions/not-found') {
       return 'The requested resource was not found.';
     }
+    if (err.code === 'functions/internal' && err.message === 'INTERNAL') {
+      return 'An internal server error occurred while processing your request.';
+    }
+    if (err.code === 'functions/unavailable') {
+      return 'The service is temporarily unavailable. Please try again shortly.';
+    }
+    if (err.code === 'functions/deadline-exceeded') {
+      return 'The request timed out. Please try again.';
+    }
     return err.message;
   }
 }

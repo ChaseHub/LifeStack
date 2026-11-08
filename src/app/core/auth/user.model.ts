@@ -6,6 +6,6 @@ export interface AuthUser {
 }
 
 export interface UserProfile extends AuthUser {
-  readonly createdAt?: unknown;
-  readonly updatedAt?: unknown;
+  readonly createdAt?: string | null;
+  readonly updatedAt?: string | null;
 }

@@ -1,6 +1,7 @@
-import { configureGlobalFunctionOptions } from "./config/firebase.js";
+import { configureGlobalFunctionOptions, getAdminApp } from "./config/firebase.js";
 
 configureGlobalFunctionOptions();
+getAdminApp();
 
 export { apiHealth } from "./http/api-health.js";
 export { authUserCreated, authUserDeleted } from "./triggers/auth.triggers.js";
